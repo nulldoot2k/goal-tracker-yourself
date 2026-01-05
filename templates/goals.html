@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Quản Lý Mục Tiêu{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-list-check"></i> Quản Lý Mục Tiêu</h2>
+        <a href="/goals/add" class="btn btn-primary-custom">
+            <i class="bi bi-plus-circle"></i> Thêm Mục Tiêu Mới
+        </a>
+    </div>
+
+    {% if goals %}
+        <div class="row">
+            {% for goal in goals %}
+            <div class="col-md-6">
+                <div class="goal-card card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">
+                                    {% if goal.status == 'completed' %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% elif goal.status == 'paused' %}
+                                        <i class="bi bi-pause-circle text-warning"></i>
+                                    {% else %}
+                                        <i class="bi bi-circle text-primary"></i>
+                                    {% endif %}
+                                    {{ goal.title }}
+                                </h5>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-plus"></i> Tạo: {{ goal.created_at }}
+                                </small>
+                            </div>
+                            <div>
+                                {% if goal.status == 'active' %}
+                                    <span class="badge bg-primary">Đang thực hiện</span>
+                                {% elif goal.status == 'completed' %}
+                                    <span class="badge bg-success">Hoàn thành</span>
+                                {% elif goal.status == 'paused' %}
+                                    <span class="badge bg-warning">Tạm dừng</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if goal.description %}
+                        <p class="text-muted mb-3">{{ goal.description }}</p>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small><i class="bi bi-flag"></i> <strong>Hạn:</strong></small>
+                                <small><strong>{{ goal.target_date }}</strong></small>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <small><i class="bi bi-list-task"></i> <strong>Hoạt động:</strong></small>
+                                <small><strong>{{ goal.subtask_count }} tasks</strong></small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a href="/goals/{{ goal.id }}" class="btn btn-sm btn-primary-custom flex-grow-1">
+                                <i class="bi bi-eye"></i> Chi tiết
+                            </a>
+                            <a href="/goals/{{ goal.id }}/edit" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="POST" action="/goals/{{ goal.id }}/delete"
+                                  onsubmit="return confirm('Xóa mục tiêu và tất cả hoạt động?')">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info alert-custom">
+            <i class="bi bi-info-circle"></i> Chưa có mục tiêu nào. 
+            <a href="/goals/add" class="alert-link">Thêm mục tiêu đầu tiên</a> để bắt đầu theo dõi tiến độ 2026!
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

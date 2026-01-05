@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Thêm Mục Tiêu Mới{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <h2 class="mb-4"><i class="bi bi-plus-circle"></i> Thêm Mục Tiêu Mới</h2>
+    
+    <div class="card goal-card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="title" class="form-label"><strong>Tên mục tiêu</strong> <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="title" name="title" required 
+                           placeholder="Ví dụ: Học Python, Tăng doanh thu 50%...">
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label"><strong>Mô tả chi tiết</strong></label>
+                    <textarea class="form-control" id="description" name="description" rows="4"
+                              placeholder="Chi tiết về mục tiêu này, các bước thực hiện..."></textarea>
+                    <small class="text-muted">Mô tả rõ mục tiêu giúp bạn tập trung hơn</small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="target_date" class="form-label"><strong>Hạn hoàn thành</strong></label>
+                    <input type="date" class="form-control" id="target_date" name="target_date" value="2026-12-31">
+                    <small class="text-muted">Ngày dự kiến hoàn thành mục tiêu</small>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary-custom flex-grow-1">
+                        <i class="bi bi-check-circle"></i> Tạo Mục Tiêu
+                    </button>
+                    <a href="/goals" class="btn btn-outline-secondary flex-grow-1">
+                        <i class="bi bi-x-circle"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-info alert-custom mt-3">
+        <i class="bi bi-lightbulb"></i> <strong>Mẹo:</strong> Chia mục tiêu lớn thành các mục tiêu nhỏ hơn để dễ theo dõi và đạt được!
+    </div>
+</div>
+{% endblock %}

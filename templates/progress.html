@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Tiến Độ{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-graph-up-arrow"></i> Tiến Độ Mục Tiêu</h2>
+
+    <!-- TIẾN ĐỘ TUẦN -->
+    <div class="card goal-card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5><i class="bi bi-calendar-week"></i> Tiến Độ Tuần Này</h5>
+                <span class="badge bg-primary">{{ week_range }}</span>
+            </div>
+
+            {% if week_stats.total_activities > 0 %}
+                <!-- Tổng quan tuần -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ week_stats.total_activities }}</h3>
+                            <small>Hoạt động tuần này</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ week_stats.active_goals }}</h3>
+                            <small>Mục tiêu đang làm</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ week_stats.avg_per_day }}</h3>
+                            <small>Hoạt động/ngày</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chi tiết theo mục tiêu -->
+                <h6 class="mb-3">Chi Tiết Theo Mục Tiêu</h6>
+                {% for goal_id, info in week_by_goal.items() %}
+                <div class="card mb-3" style="background: #f8f9fa; border: 2px solid #dee2e6;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">
+                                <i class="bi bi-bullseye text-primary"></i> 
+                                {{ info.goal_title }}
+                            </h6>
+                            <span class="badge bg-success">{{ info.tasks|length }} hoạt động</span>
+                        </div>
+                        
+                        <div class="mt-2">
+                            {% for task in info.tasks %}
+                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <span>
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    {{ task.title }}
+                                </span>
+                                <small class="text-muted">{{ task.created_at }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-secondary alert-custom">
+                    <i class="bi bi-info-circle"></i> 
+                    Chưa có hoạt động nào trong tuần này. Hãy bắt đầu làm việc!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TIẾN ĐỘ THÁNG -->
+    <div class="card goal-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5><i class="bi bi-calendar-month"></i> Tiến Độ Tháng {{ month_name }}</h5>
+            </div>
+
+            {% if month_stats.total_activities > 0 %}
+                <!-- Tổng quan tháng -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ month_stats.total_activities }}</h3>
+                            <small>Tổng hoạt động</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ month_stats.active_goals }}</h3>
+                            <small>Mục tiêu đang làm</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ month_stats.completed_goals }}</h3>
+                            <small>Hoàn thành</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card text-center">
+                            <h3 class="mb-1">{{ month_stats.days_active }}</h3>
+                            <small>Ngày làm việc</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Biểu đồ theo mục tiêu -->
+                <h6 class="mb-3">Phân Bố Theo Mục Tiêu</h6>
+                <div class="row">
+                    {% for goal_id, info in month_by_goal.items() %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card" style="background: #f8f9fa; border: 2px solid #dee2e6;">
+                            <div class="card-body">
+                                <h6 class="mb-2">
+                                    <i class="bi bi-bullseye text-primary"></i> 
+                                    {{ info.goal_title }}
+                                </h6>
+                                
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span><strong>Số hoạt động:</strong></span>
+                                    <span class="badge bg-primary">{{ info.tasks|length }}</span>
+                                </div>
+                                
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar progress-bar-custom" 
+                                         style="width: {{ (info.tasks|length / month_stats.total_activities * 100)|round }}%;">
+                                    </div>
+                                </div>
+                                
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="bi bi-percent"></i>
+                                    {{ (info.tasks|length / month_stats.total_activities * 100)|round(1) }}% tổng hoạt động
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-secondary alert-custom">
+                    <i class="bi bi-info-circle"></i> 
+                    Chưa có hoạt động nào trong tháng này.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Ghi chú -->
+    <div class="alert alert-info alert-custom mt-4">
+        <i class="bi bi-lightbulb"></i> <strong>Lưu ý:</strong> 
+        Tiến độ được tính tự động dựa trên số lượng hoạt động bạn đã tạo. 
+        Càng nhiều hoạt động = Càng tiến bộ! 💪
+    </div>
+</div>
+{% endblock %}

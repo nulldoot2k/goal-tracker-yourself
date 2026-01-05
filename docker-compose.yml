@@ -1,0 +1,61 @@
+---
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: goal-tracker-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: changeme123
+    networks:
+      - goal-tracker-net
+
+  app:
+    build: .
+    container_name: goal-tracker-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./templates:/app/templates
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://admin:changeme123@mongodb:27017
+      API_URL: http://app:5000
+    depends_on:
+      - mongodb
+    networks:
+      - goal-tracker-net
+
+  scheduler:
+    build: .
+    container_name: goal-tracker-scheduler
+    restart: unless-stopped
+    command: python scheduler_advanced.py
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://admin:changeme123@mongodb:27017
+      API_URL: http://app:5000
+    depends_on:
+      - app
+    networks:
+      - goal-tracker-net
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  goal-tracker-net:
+    driver: bridge

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Báo Cáo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4"><i class="bi bi-bar-chart"></i> Báo Cáo & Thống Kê</h2>
+
+    <!-- Báo cáo tuần -->
+    <div class="card goal-card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5><i class="bi bi-calendar-week"></i> Báo Cáo Tuần ({{ week_range }})</h5>
+                <button class="btn btn-primary-custom btn-sm" onclick="sendWeeklyReport()">
+                    <i class="bi bi-telegram"></i> Gửi Telegram
+                </button>
+            </div>
+
+            {% if week_by_goal %}
+                {% for goal_id, info in week_by_goal.items() %}
+                <div class="mb-4 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                    <h6 class="mb-3">
+                        <i class="bi bi-bullseye text-primary"></i> 
+                        <strong>{{ loop.index }}. {{ info.goal_title }}</strong>
+                        <span class="badge bg-primary ms-2">{{ info.tasks|length }} hoạt động</span>
+                    </h6>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th width="50">#</th>
+                                    <th>Hoạt Động</th>
+                                    <th width="100">Ngày</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in info.tasks %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <i class="bi bi-check-circle text-success"></i> {{ task.title }}
+                                        {% if task.note %}
+                                        <br><small class="text-muted">{{ task.note }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td><small>{{ task.created_at }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="alert alert-success alert-custom mt-3">
+                    <i class="bi bi-trophy"></i> <strong>Tuyệt vời!</strong> 
+                    Bạn đã hoàn thành 
+                    {% set total_tasks = namespace(value=0) %}
+                    {% for goal_id, info in week_by_goal.items() %}
+                        {% set total_tasks.value = total_tasks.value + info.tasks|length %}
+                    {% endfor %}
+                    {{ total_tasks.value }} hoạt động trong tuần này!
+                </div>
+            {% else %}
+                <div class="alert alert-secondary alert-custom">
+                    <i class="bi bi-info-circle"></i> Chưa có hoạt động nào được ghi nhận trong tuần này.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Báo cáo tháng -->
+    <div class="card goal-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5><i class="bi bi-calendar-month"></i> Báo Cáo {{ month_name }}</h5>
+                <button class="btn btn-primary-custom btn-sm" onclick="sendMonthlyReport()">
+                    <i class="bi bi-telegram"></i> Gửi Telegram
+                </button>
+            </div>
+
+            {% if month_by_goal %}
+                {% set total_month_tasks = namespace(value=0) %}
+                {% for goal_id, info in month_by_goal.items() %}
+                    {% set total_month_tasks.value = total_month_tasks.value + info.tasks|length %}
+                {% endfor %}
+                
+                <div class="alert alert-info alert-custom mb-3">
+                    <i class="bi bi-info-circle"></i> 
+                    <strong>Tổng số hoạt động tháng này: {{ total_month_tasks.value }}</strong>
+                </div>
+
+                <div class="row">
+                    {% for goal_id, info in month_by_goal.items() %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card" style="background: #f8f9fa; border: 2px solid #dee2e6;">
+                            <div class="card-body">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-bullseye text-primary"></i> {{ info.goal_title }}
+                                </h6>
+                                <div class="mb-2">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    <strong>Số hoạt động:</strong> {{ info.tasks|length }}
+                                </div>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-range"></i> 
+                                    Từ {{ info.tasks|map(attribute='created_at')|min }} 
+                                    đến {{ info.tasks|map(attribute='created_at')|max }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="alert alert-success alert-custom mt-3">
+                    <i class="bi bi-trophy"></i> <strong>Xuất sắc!</strong> 
+                    Bạn đã duy trì {{ total_month_tasks.value }} hoạt động trong {{ month_name }}. 
+                    Tiếp tục phấn đấu!
+                </div>
+            {% else %}
+                <div class="alert alert-secondary alert-custom">
+                    <i class="bi bi-info-circle"></i> Chưa có hoạt động nào được ghi nhận trong tháng này.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function sendWeeklyReport() {
+    if (!confirm('Gửi báo cáo tuần đến Telegram?')) return;
+    
+    fetch('/api/send-weekly-reminder', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(err => alert('Lỗi: ' + err));
+}
+
+function sendMonthlyReport() {
+    if (!confirm('Gửi báo cáo tháng đến Telegram?')) return;
+    
+    fetch('/api/send-monthly-review', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(err => alert('Lỗi: ' + err));
+}
+</script>
+{% endblock %}
