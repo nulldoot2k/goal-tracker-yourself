@@ -54,16 +54,18 @@
         </div>
     </div>
 
-    <!-- Telegram Status -->
+    <!-- Telegram Status & Backup -->
     <div class="row mt-4">
         <div class="col-12">
             <div class="card goal-card">
                 <div class="card-body">
-                    <h5><i class="bi bi-telegram"></i> Trạng Thái Telegram</h5>
+                    <h5><i class="bi bi-telegram"></i> Trạng Thái Telegram & Backup</h5>
                     {% if telegram_configured %}
                         <div class="alert alert-success alert-custom">
                             <i class="bi bi-check-circle-fill"></i> Đã kết nối Telegram Bot
                         </div>
+                        
+                        <h6 class="mt-3"><i class="bi bi-send"></i> Gửi Báo Cáo</h6>
                         <button class="btn btn-primary-custom" onclick="testTelegram()">
                             <i class="bi bi-send"></i> Test Gửi Thông Báo
                         </button>
@@ -73,10 +75,32 @@
                         <button class="btn btn-primary-custom ms-2" onclick="sendMonthlyReview()">
                             <i class="bi bi-calendar-month"></i> Gửi Báo Cáo Tháng
                         </button>
+                        
+                        <hr>
+                        
+                        <h6 class="mt-3"><i class="bi bi-cloud-download"></i> Backup Thủ Công</h6>
+                        <button class="btn btn-success" onclick="downloadBackup()">
+                            <i class="bi bi-download"></i> Tải Backup Về Máy
+                        </button>
+                        <button class="btn btn-info ms-2" onclick="backupToTelegram()">
+                            <i class="bi bi-telegram"></i> Gửi Backup Lên Telegram
+                        </button>
+                        
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle"></i> Backup tự động hàng tháng sẽ được gửi qua Telegram
+                        </small>
                     {% else %}
                         <div class="alert alert-warning alert-custom">
                             <i class="bi bi-exclamation-triangle-fill"></i> Chưa cấu hình Telegram. Vui lòng thiết lập trong file .env
                         </div>
+                        
+                        <h6 class="mt-3"><i class="bi bi-cloud-download"></i> Backup Thủ Công</h6>
+                        <button class="btn btn-success" onclick="downloadBackup()">
+                            <i class="bi bi-download"></i> Tải Backup Về Máy
+                        </button>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle"></i> Bạn vẫn có thể tải backup về máy mà không cần Telegram
+                        </small>
                     {% endif %}
                 </div>
             </div>
@@ -119,23 +143,10 @@
                             </small>
                         </div>
                         
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span><strong>Tiến độ:</strong></span>
-                                <span><strong>{{ goal.progress }}%</strong></span>
-                            </div>
-                            <div class="progress" style="height: 10px;">
-                                <div class="progress-bar progress-bar-custom" 
-                                     role="progressbar" 
-                                     style="width: {{ goal.progress }}%;"
-                                     aria-valuenow="{{ goal.progress }}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                </div>
-                            </div>
-                        </div>
-                        
                         <div class="mt-3">
+                            <a href="/goals/{{ goal.id }}" class="btn btn-sm btn-primary-custom">
+                                <i class="bi bi-eye"></i> Chi tiết
+                            </a>
                             <a href="/goals/{{ goal.id }}/edit" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Chỉnh sửa
                             </a>
@@ -190,6 +201,35 @@ function sendMonthlyReview() {
     if (!confirm('Gửi báo cáo tháng đến Telegram?')) return;
     
     fetch('/api/send-monthly-review', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(err => alert('Lỗi: ' + err));
+}
+
+// ===== NÚT BACKUP THỦ CÔNG =====
+
+function downloadBackup() {
+    if (!confirm('Tải file backup về máy?')) return;
+    
+    // Mở link download trong tab mới
+    window.location.href = '/api/download-backup';
+    
+    // Thông báo
+    setTimeout(() => {
+        alert('✅ Đang tải file backup xuống máy...');
+    }, 500);
+}
+
+function backupToTelegram() {
+    if (!confirm('Gửi file backup lên Telegram?')) return;
+    
+    fetch('/api/backup-to-telegram', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
             if (data.success) {

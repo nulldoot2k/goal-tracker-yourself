@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-app.py - Flask Web Application (Optimized Final Version)
-- Tách biệt: Chi tiết mục tiêu / Tiến độ / Báo cáo
-- Tiến độ & Báo cáo: Read-only, tự động tính
+app.py - Flask Web Application (Updated with Manual Backup)
+- Thêm: Backup thủ công tải về máy
+- Thêm: Backup thủ công gửi Telegram
 """
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
@@ -403,18 +403,49 @@ def reports():
 # API ENDPOINTS
 # ============================================================
 
-@app.route('/api/export-json', methods=['GET'])
-def api_export_json():
-    """Export dữ liệu ra JSON file"""
+@app.route('/api/download-backup', methods=['GET'])
+def api_download_backup():
+    """Backup thủ công: Tải file JSON về máy"""
+    try:
+        json_file = 'data/goals_data.json'
+        
+        if not os.path.exists(json_file):
+            return jsonify({'success': False, 'message': 'File không tồn tại'}), 404
+        
+        # Tạo tên file với timestamp
+        today = datetime.now()
+        download_name = f"goals_backup_{today.strftime('%Y%m%d_%H%M%S')}.json"
+        
+        return send_file(
+            json_file,
+            as_attachment=True,
+            download_name=download_name,
+            mimetype='application/json'
+        )
+    except Exception as e:
+        logger.error(f"Download backup error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/backup-to-telegram', methods=['POST'])
+def api_backup_to_telegram():
+    """Backup thủ công: Gửi JSON về Telegram"""
     try:
         output_path = storage.export_json()
-        return send_file(output_path, 
-                        as_attachment=True,
-                        download_name=os.path.basename(output_path),
-                        mimetype='application/json')
+        
+        today = datetime.now()
+        caption = f"💾 Backup thủ công\n🗓️ {today.strftime('%d/%m/%Y %H:%M:%S')}"
+        
+        success, msg = send_telegram_file(output_path, caption)
+        
+        # Xóa file tạm
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        
+        return jsonify({'success': success, 'message': msg})
     except Exception as e:
-        logger.error(f"Export error: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        logger.error(f"Backup to Telegram error: {e}")
+        return jsonify({'success': False, 'message': str(e)})
 
 
 @app.route('/api/test-telegram', methods=['POST'])
@@ -508,7 +539,7 @@ def api_send_monthly_review():
 
 @app.route('/api/send-monthly-backup', methods=['POST'])
 def api_send_monthly_backup():
-    """Gửi backup JSON tháng qua Telegram"""
+    """Gửi backup JSON tháng qua Telegram (tự động)"""
     try:
         output_path = storage.export_json()
         
@@ -522,7 +553,7 @@ def api_send_monthly_backup():
         
         return jsonify({'success': success, 'message': msg})
     except Exception as e:
-        logger.error(f"Backup error: {e}")
+        logger.error(f"Monthly backup error: {e}")
         return jsonify({'success': False, 'message': str(e)})
 
 

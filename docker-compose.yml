@@ -1,61 +1,96 @@
----
 version: '3.8'
 
 services:
+  # MongoDB (Optional - Backup storage)
   mongodb:
     image: mongo:7
-    container_name: goal-tracker-mongo
+    container_name: goal_tracker_mongodb
     restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin123}
+    volumes:
+      - mongodb_data:/data/db
     ports:
       - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: changeme123
     networks:
-      - goal-tracker-net
+      - goal_tracker_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  app:
+  # Flask Web Application
+  web:
     build: .
-    container_name: goal-tracker-app
+    container_name: goal_tracker_web
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    environment:
+      # Flask
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+      PORT: 5000
+      
+      # MongoDB (Optional)
+      MONGO_URI: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-admin123}@mongodb:27017/
+      
+      # Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      TELEGRAM_THREAD_ID: ${TELEGRAM_THREAD_ID:-}
+      
+      # API URL for scheduler
+      API_URL: http://web:5000
     volumes:
       - ./data:/app/data
       - ./templates:/app/templates
-    env_file:
-      - .env
-    environment:
-      MONGO_URI: mongodb://admin:changeme123@mongodb:27017
-      API_URL: http://app:5000
+      - ./static:/app/static
+    ports:
+      - "5000:5000"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
-      - goal-tracker-net
+      - goal_tracker_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
+  # Scheduler (Auto reports)
   scheduler:
     build: .
-    container_name: goal-tracker-scheduler
+    container_name: goal_tracker_scheduler
     restart: unless-stopped
-    command: python scheduler_advanced.py
-    volumes:
-      - ./data:/app/data
-    env_file:
-      - .env
+    command: python scheduler.py
     environment:
-      MONGO_URI: mongodb://admin:changeme123@mongodb:27017
-      API_URL: http://app:5000
+      # API URL
+      API_URL: http://web:5000
+      
+      # Telegram
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      TELEGRAM_THREAD_ID: ${TELEGRAM_THREAD_ID:-}
+      
+      # Schedule config
+      WEEKLY_REMINDER_DAY: ${WEEKLY_REMINDER_DAY:-sunday}
+      WEEKLY_REMINDER_TIME: ${WEEKLY_REMINDER_TIME:-20:00}
+      MONTHLY_REVIEW_DAY: ${MONTHLY_REVIEW_DAY:-1}
+      MONTHLY_REVIEW_TIME: ${MONTHLY_REVIEW_TIME:-09:00}
+      TEST_ON_START: ${TEST_ON_START:-false}
     depends_on:
-      - app
+      web:
+        condition: service_healthy
     networks:
-      - goal-tracker-net
+      - goal_tracker_network
 
 volumes:
-  mongo_data:
+  mongodb_data:
     driver: local
 
 networks:
-  goal-tracker-net:
+  goal_tracker_network:
     driver: bridge
