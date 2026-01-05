@@ -154,6 +154,48 @@
                     </div>
                 </div>
                 {% endfor %}
+
+                <!-- PHÂN TRANG -->
+                {% if total_pages > 1 %}
+                <div class="mt-5">
+                    <nav aria-label="Phân trang mục tiêu">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                                <a class="page-link" href="?page={{ page - 1 if page > 1 else 1 }}">« Trước</a>
+                            </li>
+
+                            {% set start_page = [page - 4, 1]|max %}
+                            {% set end_page = [page + 4, total_pages]|min %}
+
+                            {% if start_page > 1 %}
+                                <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                                {% if start_page > 2 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endif %}
+
+                            {% for p in range(start_page, end_page + 1) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                                </li>
+                            {% endfor %}
+
+                            {% if end_page < total_pages %}
+                                {% if end_page < total_pages - 1 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                                <li class="page-item"><a class="page-link" href="?page={{ total_pages }}">{{ total_pages }}</a></li>
+                            {% endif %}
+
+                            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                                <a class="page-link" href="?page={{ page + 1 if page < total_pages else total_pages }}">Sau »</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                <!-- HẾT PHÂN TRANG -->
+
             {% else %}
                 <div class="alert alert-info alert-custom">
                     <i class="bi bi-info-circle"></i> Chưa có mục tiêu nào. 
@@ -212,15 +254,11 @@ function sendMonthlyReview() {
         .catch(err => alert('Lỗi: ' + err));
 }
 
-// ===== NÚT BACKUP THỦ CÔNG =====
-
 function downloadBackup() {
     if (!confirm('Tải file backup về máy?')) return;
     
-    // Mở link download trong tab mới
     window.location.href = '/api/download-backup';
     
-    // Thông báo
     setTimeout(() => {
         alert('✅ Đang tải file backup xuống máy...');
     }, 500);

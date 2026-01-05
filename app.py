@@ -126,10 +126,26 @@ def index():
         'week_subtasks': week_subtasks
     }
     
+    # === PHÂN TRANG CHO MỤC TIÊU TRÊN DASHBOARD ===
+    page = request.args.get('page', 1, type=int)
+    per_page = 2  # Bạn có thể đổi thành 5, 8, 9, 12 tùy thích
+    
+    all_goals = data['goals']
+    total_goals_count = len(all_goals)  # để hiển thị tổng số
+    
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_goals = all_goals[start:end]
+    
+    total_pages = (total_goals_count + per_page - 1) // per_page if total_goals_count > 0 else 1
+    
     return render_template('index.html', 
-                         goals=data['goals'], 
-                         stats=stats,
-                         telegram_configured=bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID))
+                           goals=paginated_goals,
+                           stats=stats,
+                           telegram_configured=bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID),
+                           page=page,
+                           total_pages=total_pages,
+                           total_goals=total_goals_count)
 
 
 @app.route('/goals')
